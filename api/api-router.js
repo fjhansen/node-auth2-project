@@ -1,6 +1,9 @@
 const express = require("express");
 const api = require("./api-helpers.js");
 const bc = require('bcryptjs');
+const jwt = require("jsonwebtoken");
+const restrict = require("../middleware/restrict")
+
 
 const router = express.Router();
 
@@ -40,15 +43,24 @@ router.get('/users', (req, res) => {
 
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
+
+  const tokenPayload = {
+    userId: username.id,
+    userRole: "normal" // fake, would normally come from DB
+  }
+
+  const token = jwt.sign(tokenPayload, process.env.JWT_SECRET)
+
   api.findUser(username)
   .then(user => {
     if(user && bc.compareSync(password, user.password)) {
-      return res.status(201).json({ token: user.password, message: "Login success"})
+      return res.status(201).json({  message: "Login success", token: token})
     } 
     else {
       return res.status(400).json({ error: 'Error loggin in'})
     }
     
+
   })
 })
 
